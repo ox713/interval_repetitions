@@ -44,17 +44,25 @@ from datetime import timedelta
 
 
 class ParserExcel(object):
-    def __init__(self, EXCELS):
+    def __init__(self, EXCELS ):
         self.excels = EXCELS
-        self.all_reiteration = []
-        self.operations = Operations_with_parsed_excel()
-
-    def import_excel_files(self):
-        for excel in self.excels:
-            wb = load_workbook(filename=excel)
-            self.all_reiteration.append(self.operations.value_operations(wb[wb.sheetnames[0]]))
 
 
+    # def import_excel_files(self):
+    #     for excel in self.excels:
+    #         wb = load_workbook(filename=excel)
+    #         self.all_reiteration.append(self.operations.value_operations(wb[wb.sheetnames[0]]))
+
+    def load_excel_file(self, excel):
+        #names_of_sheets = []
+        excel_file = load_workbook(filename=excel) # объект загружаеться в память, так что надо работать
+        #names_of_sheets.append({excel: wb.sheetnames})
+
+        return excel_file
+
+    def return_data_from_names_of_sheets(self, excel, sheet):
+
+        pass
 
 
     def test_print(self, reiteration, sheet):
@@ -66,17 +74,25 @@ class ParserExcel(object):
 class Operations_with_parsed_excel(object):
 
     def __init__(self):
+        self.export_data = Export_done_file()
         pass
         #self.excels = excels
         #self.all_reiteration = all_reiteration
 
+    #
+    # def call_import_excel(self, import_class):
+    #
+    #     pass
+
     def value_operations(self, sheet):
         # пока так потом может добавить выбор
         if config.TYPE_OF_SELECT == "today":
-            return self.today_reiteration(sheet, 0)
+            #self.export_data.to_txt(, sheet)
+            return self.find_reiteration(sheet, 0)
+
 
         elif config.TYPE_OF_SELECT == "tomorrow":
-            return self.today_reiteration(sheet, 1)
+            return self.find_reiteration(sheet, 1)
 
         elif config.TYPE_OF_SELECT == "tag":
             pass
@@ -112,7 +128,7 @@ class Operations_with_parsed_excel(object):
                 print(i)
                 return i
 
-    def today_reiteration(self, sheet, needed_date):
+    def find_reiteration(self, sheet, needed_date):
         reiteration = []
         end = self.end_of_file(sheet)
         today = datetime.date.today()
@@ -126,7 +142,7 @@ class Operations_with_parsed_excel(object):
         for i in range(1, end):
             print(sheet.cell(row=i, column=6).value)
 
-            if not isinstance(sheet.cell(row=i, column=6).value, datetime.datetime) :#sheet.cell(row=i, column=6).value == None or sheet.cell(row=i, column=6).value =="":
+            if not isinstance(sheet.cell(row=i, column=6).value, datetime.datetime): # sheet.cell(row=i, column=6).value == None or sheet.cell(row=i, column=6).value =="":
                 continue
 
             else:
@@ -139,9 +155,59 @@ class Operations_with_parsed_excel(object):
         return reiteration
 
 
+class Export_done_file(object):
+    def __init__(self):
+        pass
+
+    def to_txt(self, sheet, repeat):
+        config.TYPE_OF_SELECT + ".txt"
+
+        with open(config.TYPE_OF_SELECT + ".txt", 'a+', encoding="UTF-8") as f:
+            counter = 1
+            for i in repeat:
+
+                print(sheet.cell(row=i, column=3).value)
+                f.write(f"Вопрос {counter}\n")
+                f.write(str(sheet.cell(row=i, column=3).value)+"\n")
+
+                print(sheet.cell(row=i, column=2).value)
+                f.write(f"Ответ {counter}\n")
+                f.write(str(sheet.cell(row=i, column=2).value)+"\n")
+                f.write("-----\n\n")
+                counter += 1
 
 
-test = ParserExcel(config.EXCELS)
-test.import_excel_files()
-print(11, test.all_reiteration)
 
+
+
+
+
+
+# лучше вынесу все объеты в маин, чтобы логика не путалась, чтобы стал главной базой
+def main():
+
+    all_reiteration = []
+    operations = Operations_with_parsed_excel()
+    loader = ParserExcel(config.EXCELS)
+    export_list = Export_done_file()
+
+    k = 1
+
+    for excel in config.EXCELS:
+        excel_file = loader.load_excel_file(excel)
+        for sheet in excel_file.sheetnames:
+            if excel_file[sheet].cell(row=1, column=1).value == "NO":
+                continue
+            export_list.to_txt(excel_file[sheet], operations.value_operations(excel_file[sheet]))
+            print("done", k)
+            k+= 1
+
+
+
+
+
+
+
+
+
+main()

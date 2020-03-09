@@ -1,7 +1,6 @@
 EXCELS = (
-'C:\Base\All\Конспекты\python.xlsx',
-
-)
+'C:\Base\All\Конспекты\python.xlsx'),
+#'C:\Base\All\Конспекты\python.xlsx')
 DATES_PLUS = [1, 3, 7, 14, 31, 60, 90]
 
 # first = 1
