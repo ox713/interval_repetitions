@@ -32,7 +32,8 @@
     Типы повторений: по дате, по темам, по тегам, по источнику, по языку источника, по качеству усвоения,
     по сложности, по типу ячеек(например код не нужно в аудио), по листам
 
-
+    Для озвучивания необходимо метить отдельно английские и русские слова
+    Практические повторения, то есть берем генерируем пример который нужно запрогать определенным методом и в уме делаем.
 Поля:
 1.
 """
@@ -41,12 +42,11 @@ import datetime
 import config
 from openpyxl import load_workbook
 from datetime import timedelta
-
+from subprocess import Popen, PIPE
 
 class ParserExcel(object):
-    def __init__(self, EXCELS ):
+    def __init__(self, EXCELS):
         self.excels = EXCELS
-
 
     # def import_excel_files(self):
     #     for excel in self.excels:
@@ -54,30 +54,29 @@ class ParserExcel(object):
     #         self.all_reiteration.append(self.operations.value_operations(wb[wb.sheetnames[0]]))
 
     def load_excel_file(self, excel):
-        #names_of_sheets = []
-        excel_file = load_workbook(filename=excel) # объект загружаеться в память, так что надо работать
-        #names_of_sheets.append({excel: wb.sheetnames})
+        # names_of_sheets = []
+        excel_file = load_workbook(filename=excel)  # объект загружаеться в память, так что надо работать
+        # names_of_sheets.append({excel: wb.sheetnames})
 
         return excel_file
 
     def return_data_from_names_of_sheets(self, excel, sheet):
-
         pass
-
 
     def test_print(self, reiteration, sheet):
         for i in reiteration:
             # Вопрос\ответ
-            print(sheet.cell(row=i, column=3))
-            print(sheet.cell(row=i, column=2))
+            print(sheet.cell(row=i, column=3), 1)
+            print(sheet.cell(row=i, column=2), 2)
 
-class Operations_with_parsed_excel(object):
+
+class OperationsWithParsedExcel(object):
 
     def __init__(self):
-        self.export_data = Export_done_file()
+        self.export_data = ExportDoneFile()
         pass
-        #self.excels = excels
-        #self.all_reiteration = all_reiteration
+        # self.excels = excels
+        # self.all_reiteration = all_reiteration
 
     #
     # def call_import_excel(self, import_class):
@@ -87,9 +86,8 @@ class Operations_with_parsed_excel(object):
     def value_operations(self, sheet):
         # пока так потом может добавить выбор
         if config.TYPE_OF_SELECT == "today":
-            #self.export_data.to_txt(, sheet)
+            # self.export_data.to_txt(, sheet)
             return self.find_reiteration(sheet, 0)
-
 
         elif config.TYPE_OF_SELECT == "tomorrow":
             return self.find_reiteration(sheet, 1)
@@ -118,16 +116,12 @@ class Operations_with_parsed_excel(object):
         elif config.TYPE_OF_SELECT == "list":
             pass
 
-
-
-
-
     def end_of_file(self, sheet):
         for i in range(1, 100000):
             if sheet.cell(row=i, column=1).value == "end_of_end":
-                print(i)
+                print(i, 3)
                 return i
-
+        return 10000
     def find_reiteration(self, sheet, needed_date):
         reiteration = []
         end = self.end_of_file(sheet)
@@ -135,14 +129,14 @@ class Operations_with_parsed_excel(object):
         if isinstance(needed_date, datetime.date):
             date = needed_date
 
-        else: # Если смещение
+        else:  # Если смещение
             date = today + timedelta(days=needed_date)
-
-
+        if end == None:
+            print("dd", 4)
         for i in range(1, end):
-            print(sheet.cell(row=i, column=6).value)
+            print(sheet.cell(row=i, column=6).value, 5)
 
-            if not isinstance(sheet.cell(row=i, column=6).value, datetime.datetime): # sheet.cell(row=i, column=6).value == None or sheet.cell(row=i, column=6).value =="":
+            if not isinstance(sheet.cell(row=i, column=6).value, datetime.datetime):  # sheet.cell(row=i, column=6).value == None or sheet.cell(row=i, column=6).value =="":
                 continue
 
             else:
@@ -151,63 +145,88 @@ class Operations_with_parsed_excel(object):
 
                     if datetime.date(int(str(temp)[0:4]), int(str(temp)[5:7]), int(str(temp)[8:10])) == date:
                         reiteration.append(i)
-        print(reiteration)
+        print(reiteration, 6)
         return reiteration
 
 
-class Export_done_file(object):
+class ExportDoneFile(object):
     def __init__(self):
         pass
 
-    def to_txt(self, sheet, repeat):
-        config.TYPE_OF_SELECT + ".txt"
+    def to_txt(self, sheet, repeat, excel=None, sheet_name = None):
 
         with open(config.TYPE_OF_SELECT + ".txt", 'a+', encoding="UTF-8") as f:
             counter = 1
             for i in repeat:
-
-                print(sheet.cell(row=i, column=3).value)
+                print(sheet.cell(row=i, column=3).value, 61)
+                f.write(f"{excel}\n")
+                f.write(f"{sheet_name}\n")
                 f.write(f"Вопрос {counter}\n")
-                f.write(str(sheet.cell(row=i, column=3).value)+"\n")
+                f.write(str(sheet.cell(row=i, column=3).value) + "\n")
 
-                print(sheet.cell(row=i, column=2).value)
+                print(sheet.cell(row=i, column=2).value, 7)
                 f.write(f"Ответ {counter}\n")
-                f.write(str(sheet.cell(row=i, column=2).value)+"\n")
+                f.write(str(sheet.cell(row=i, column=2).value) + "\n")
                 f.write("-----\n\n")
                 counter += 1
 
+class ExportInBalabolku():
+    def __init__(self):
+        pass
 
+    def export(self, file_name):
+        path = "./" + file_name + ".txt"
+        outpath  = "./" + file_name + ".wav"
 
+        proc = Popen(
+            f"C:/1/balcon.exe -f {path} -w {outpath}",
+            shell=True,
+            stdout=PIPE, stderr=PIPE
+        )
+        proc.wait()  # дождаться выполнения
+        res = proc.communicate()  # получить tuple('stdout', 'stderr')
+        if proc.returncode:
+            print(res[1])
+        print('result:', res[0])
+    #
+    # def def_language(self, file_name):
+    #     with open("./file_name", "w") as w:
+    #         with open("./file_name", "r") as r:
+    #             for i in r:
+    #                 line = r.readline().split(" ")
+    #                 for g in line:
+    #                     # Кириллица
+    #                     # latin
+    #                     if 97 <= ord(g[0].lower()) <= 122:
+    #                         new_line = r'<voice required="Language=409"><voice required="Name=VW Julie">' + g
+    #                         w.write(new_line)
+    #                     # другие надо как-то обозначить
+    #                     else: pass
 
-
+                        # elif 1040 <= ord(g[0])  <= 1103:
+                        #     pass
 
 
 
 # лучше вынесу все объеты в маин, чтобы логика не путалась, чтобы стал главной базой
 def main():
-
     all_reiteration = []
-    operations = Operations_with_parsed_excel()
+    operations = OperationsWithParsedExcel()
     loader = ParserExcel(config.EXCELS)
-    export_list = Export_done_file()
-
+    export_list = ExportDoneFile()
+    balabolka = ExportInBalabolku()
     k = 1
 
     for excel in config.EXCELS:
+        print(excel,"####################################################")
         excel_file = loader.load_excel_file(excel)
         for sheet in excel_file.sheetnames:
+            print(sheet, "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
             if excel_file[sheet].cell(row=1, column=1).value == "NO":
                 continue
-            export_list.to_txt(excel_file[sheet], operations.value_operations(excel_file[sheet]))
-            print("done", k)
-            k+= 1
-
-
-
-
-
-
-
-
+            export_list.to_txt(excel_file[sheet], operations.value_operations(excel_file[sheet]), excel, sheet)
+            print("done", k, 8)
+            k += 1
+    #balabolka.export(config.TYPE_OF_SELECT)
 
 main()
