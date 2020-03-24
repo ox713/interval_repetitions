@@ -38,8 +38,10 @@
 1.
 """
 import datetime
+import sqlite3
 
 import config
+import mesql
 from openpyxl import load_workbook
 from datetime import timedelta
 from subprocess import Popen, PIPE
@@ -83,7 +85,7 @@ class OperationsWithParsedExcel(object):
     #
     #     pass
 
-    def value_operations(self, sheet):
+    def value_excel_operations(self, sheet):
         # пока так потом может добавить выбор
         if config.TYPE_OF_SELECT == "today":
             # self.export_data.to_txt(, sheet)
@@ -131,17 +133,19 @@ class OperationsWithParsedExcel(object):
 
         else:  # Если смещение
             date = today + timedelta(days=needed_date)
+
         if end == None:
             print("dd", 4)
-        for i in range(1, end):
-            print(sheet.cell(row=i, column=6).value, 5)
 
-            if not isinstance(sheet.cell(row=i, column=6).value, datetime.datetime):  # sheet.cell(row=i, column=6).value == None or sheet.cell(row=i, column=6).value =="":
+        for i in range(1, end):
+            #print(sheet.cell(row=i, column=4).value, 5)
+
+            if not isinstance(sheet.cell(row=i, column=4).value, datetime.datetime):  # sheet.cell(row=i, column=4).value == None or sheet.cell(row=i, column=4).value =="":
                 continue
 
             else:
                 for g in config.DATES_PLUS:
-                    temp = sheet.cell(row=i, column=6).value + timedelta(days=g)
+                    temp = sheet.cell(row=i, column=4).value + timedelta(days=g)
 
                     if datetime.date(int(str(temp)[0:4]), int(str(temp)[5:7]), int(str(temp)[8:10])) == date:
                         reiteration.append(i)
@@ -169,6 +173,38 @@ class ExportDoneFile(object):
                 f.write(str(sheet.cell(row=i, column=2).value) + "\n")
                 f.write("-----\n\n")
                 counter += 1
+
+    def to_base(self, sheet, repeat):
+        counter = 1
+        database = mesql.SQLighter1("main_base.db")
+        for i in repeat:
+            tuple_to_base = (
+                str(sheet.cell(row=i, column=3).value),
+                str(sheet.cell(row=i, column=2).value),
+                str(sheet.cell(row=i, column=4).value),
+                str(sheet.cell(row=i, column=1).value),
+                str(sheet.cell(row=i, column=5).value),
+                str(sheet.cell(row=i, column=6).value),
+                str(sheet.cell(row=i, column=7).value),
+                str(sheet.cell(row=i, column=8).value),
+                str(sheet.cell(row=i, column=9).value),
+                str(sheet.cell(row=i, column=10).value),
+                str(sheet.cell(row=i, column=11).value),
+                str(sheet.cell(row=i, column=12).value),
+                str(sheet.cell(row=i, column=13).value),
+                str(sheet.cell(row=i, column=14).value)
+
+            )
+            print(tuple_to_base)
+
+
+            #connection = sqlite3.connect("main_base", check_same_thread=False)
+            #cursor = connection.cursor()
+            #with connection:
+            database.writing_line("python", tuple_to_base)
+            #connection.commit()
+
+
 
 class ExportInBalabolku():
     def __init__(self):
@@ -224,7 +260,8 @@ def main():
             print(sheet, "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
             if excel_file[sheet].cell(row=1, column=1).value == "NO":
                 continue
-            export_list.to_txt(excel_file[sheet], operations.value_operations(excel_file[sheet]), excel, sheet)
+            export_list.to_txt(excel_file[sheet], operations.value_excel_operations(excel_file[sheet]), excel, sheet)
+            export_list.to_base(excel_file[sheet], operations.value_excel_operations(excel_file[sheet]))
             print("done", k, 8)
             k += 1
     #balabolka.export(config.TYPE_OF_SELECT)
