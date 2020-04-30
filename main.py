@@ -40,11 +40,13 @@
 import datetime
 import sqlite3
 
+
 import config
 import mesql
 from openpyxl import load_workbook
 from datetime import timedelta
 from subprocess import Popen, PIPE
+from os import listdir
 
 class ParserExcel(object):
     def __init__(self, EXCELS):
@@ -173,7 +175,7 @@ class ExportDoneFile(object):
     def __init__(self):
         pass
 
-    def to_txt(self, sheet, repeat, excel=None, sheet_name = None):
+    def to_txt(self, sheet, repeat, excel=None, sheet_name=None):
 
         with open(config.TYPE_OF_SELECT + ".txt", 'a+', encoding="UTF-8") as f:
             counter = 1
@@ -190,6 +192,21 @@ class ExportDoneFile(object):
                 #f.write("-----\n\n")
                 #counter += 1
 
+    def to_txt_cut_answer_q(self, sheet, repeat, excel=None, sheet_name=None):
+        date = str(datetime.date.today())
+        counter = 1
+        #path = "C:/Users/Ox/Desktop/qa/"
+        path = "./qa/"
+
+        for i in repeat:
+            with open(path + config.TYPE_OF_SELECT + date + "Вопрос_" + str(counter) + ".txt", 'a+', encoding="UTF-8") as f:
+                f.write(f"Вопрос {counter}\n")
+                f.write(str(sheet.cell(row=i, column=3).value) + "\n")
+
+            with open(path + config.TYPE_OF_SELECT + date + "Вопрос_" + str(counter) + "о" + ".txt", 'a+', encoding="UTF-8") as f:
+                f.write(f"Ответ {counter}\n")
+                f.write(str(sheet.cell(row=i, column=2).value) + "\n")
+            counter += 1
     def to_base(self, sheet, repeat):
         counter = 1
         database = mesql.SQLighter1("main_base.db")
@@ -226,12 +243,14 @@ class ExportInBalabolku():
     def __init__(self):
         pass
 
-    def export(self, file_name):
+    def export_in_one_file(self, file_name):
         path = "./" + file_name + ".txt"
-        outpath = "./" + file_name + ".wav"
+        # path = "C:/Users/Ox/Desktop/qa/"
+        outpath = "C:/Users/Ox/Desktop/qa/" + file_name + ".wav"
 
+        # Голоса катя и прочие требуют админских прав, поэтому надо писать выходной путь полностью
         proc = Popen(
-            f"C:/1/balcon.exe -f {path} -w {outpath} -n alyo -enc utf8",
+            f"C:/1/balcon.exe -f {path} -w {outpath} -n Katya -enc utf8",#-n aly
             shell=True,
             stdout=PIPE, stderr=PIPE
         )
@@ -240,6 +259,26 @@ class ExportInBalabolku():
         if proc.returncode:
             print(res[1])
         print('result:', res[0])
+
+    def export_in_many_files(self):
+        file_names = listdir(path="./qa/")
+
+        for i in file_names:
+            path = 'C:/Base/All/programming/python/interval_repetitions/qa/' + i
+            outpath = "C:/Users/Ox/Desktop/qa/" + i[:-4] + ".wav"
+            # Голоса катя и прочие требуют админских прав, поэтому надо писать выходной путь полностью
+            proc = Popen(
+                f"C:/1/balcon.exe -f {path} -w {outpath} -n Katya -enc utf8",#-n aly
+                shell=True,
+                stdout=PIPE, stderr=PIPE
+            )
+            proc.wait()  # дождаться выполнения
+            res = proc.communicate()  # получить tuple('stdout', 'stderr')
+            if proc.returncode:
+                print(res[1])
+
+            print('result:', res[0])
+
 
     def def_language(self, file_name):
         with open(file_name + ".txt", "r", encoding="utf8") as r:
@@ -287,7 +326,12 @@ class ExportInBalabolku():
                         #
                         # elif 1040 <= ord(g[0])  <= 1103:
                         #     pass
+
+
     def cut_on_q_a_parts(self):
+
+
+
         pass
 
 
@@ -307,11 +351,13 @@ def main():
             print(sheet, "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
             if excel_file[sheet].cell(row=1, column=1).value == "NO":
                 continue
-            export_list.to_txt(excel_file[sheet], operations.value_excel_operations(excel_file[sheet]), excel, sheet)
+            #export_list.to_txt(excel_file[sheet], operations.value_excel_operations(excel_file[sheet]), excel, sheet)
+            export_list.to_txt_cut_answer_q(excel_file[sheet], operations.value_excel_operations(excel_file[sheet]), excel, sheet)
             #export_list.to_base(excel_file[sheet], operations.value_excel_operations(excel_file[sheet]))
             print("done", k, 8)
             k += 1
-    balabolka.def_language(config.TYPE_OF_SELECT)
-    balabolka.export(config.TYPE_OF_SELECT)
+    #balabolka.def_language(config.TYPE_OF_SELECT)
+    #balabolka.export_in_one_file(config.TYPE_OF_SELECT)
+    balabolka.export_in_many_files()
 
 main()
