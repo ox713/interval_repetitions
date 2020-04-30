@@ -14,7 +14,7 @@ DATES_PLUS = [1, 3, 7, 14, 31, 60, 90]
 # seventh = 90
 
 
-TYPE_OF_SELECT = "tomorrow"#"today"#, "tomorrow", "teg", "source", "category", "language", "quality of undestand", \
+TYPE_OF_SELECT = "today"#, "tomorrow", "teg", "source", "category", "language", "quality of undestand", \
                #"quality of remembering", "deficalty", "spesiale code", "list"
 
 

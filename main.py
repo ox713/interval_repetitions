@@ -76,7 +76,6 @@ class OperationsWithParsedExcel(object):
 
     def __init__(self):
         self.export_data = ExportDoneFile()
-        pass
         # self.excels = excels
         # self.all_reiteration = all_reiteration
 
@@ -84,6 +83,14 @@ class OperationsWithParsedExcel(object):
     # def call_import_excel(self, import_class):
     #
     #     pass
+    def need_dates(self, needed_date):
+        need_dates = []
+        today = datetime.date.today()
+        date = today + timedelta(days=needed_date)
+
+        for i in config.DATES_PLUS:
+            need_dates.append(date - timedelta(days=i))
+        return need_dates
 
     def value_excel_operations(self, sheet):
         # пока так потом может добавить выбор
@@ -128,6 +135,9 @@ class OperationsWithParsedExcel(object):
         reiteration = []
         end = self.end_of_file(sheet)
         today = datetime.date.today()
+
+        calculate_dates = self.need_dates(needed_date)
+
         if isinstance(needed_date, datetime.date):
             date = needed_date
 
@@ -135,20 +145,26 @@ class OperationsWithParsedExcel(object):
             date = today + timedelta(days=needed_date)
 
         if end == None:
-            print("dd", 4)
+            print("FAIL OF END FILE", 4)
 
         for i in range(1, end):
             #print(sheet.cell(row=i, column=4).value, 5)
 
+            # ПРЕД ищет объетк дата
+
+
             if not isinstance(sheet.cell(row=i, column=4).value, datetime.datetime):  # sheet.cell(row=i, column=4).value == None or sheet.cell(row=i, column=4).value =="":
                 continue
+            # найдя дату перебирает на возможные совпадения с повторениями.
 
             else:
-                for g in config.DATES_PLUS:
-                    temp = sheet.cell(row=i, column=4).value + timedelta(days=g)
-
-                    if datetime.date(int(str(temp)[0:4]), int(str(temp)[5:7]), int(str(temp)[8:10])) == date:
+                cell_value = sheet.cell(row=i, column=4).value
+                cell_value = datetime.date(int(str(cell_value)[0:4]), int(str(cell_value)[5:7]), int(str(cell_value)[8:10]))
+                for g in calculate_dates:
+                    #temp = sheet.cell(row=i, column=4).value + timedelta(days=g) # нужна так как заменил сразу вычеслинными датами
+                    if datetime.date(int(str(g)[0:4]), int(str(g)[5:7]), int(str(g)[8:10])) == cell_value:
                         reiteration.append(i)
+                        break
         print(reiteration, 6)
         return reiteration
 
@@ -163,16 +179,16 @@ class ExportDoneFile(object):
             counter = 1
             for i in repeat:
                 print(sheet.cell(row=i, column=3).value, 61)
-                f.write(f"{excel}\n")
-                f.write(f"{sheet_name}\n")
+                #f.write(f"{excel}\n")
+                #f.write(f"{sheet_name}\n")
                 f.write(f"Вопрос {counter}\n")
                 f.write(str(sheet.cell(row=i, column=3).value) + "\n")
 
                 print(sheet.cell(row=i, column=2).value, 7)
                 f.write(f"Ответ {counter}\n")
                 f.write(str(sheet.cell(row=i, column=2).value) + "\n")
-                f.write("-----\n\n")
-                counter += 1
+                #f.write("-----\n\n")
+                #counter += 1
 
     def to_base(self, sheet, repeat):
         counter = 1
@@ -212,10 +228,10 @@ class ExportInBalabolku():
 
     def export(self, file_name):
         path = "./" + file_name + ".txt"
-        outpath  = "./" + file_name + ".wav"
+        outpath = "./" + file_name + ".wav"
 
         proc = Popen(
-            f"C:/1/balcon.exe -f {path} -w {outpath}",
+            f"C:/1/balcon.exe -f {path} -w {outpath} -n alyo -enc utf8",
             shell=True,
             stdout=PIPE, stderr=PIPE
         )
@@ -224,24 +240,55 @@ class ExportInBalabolku():
         if proc.returncode:
             print(res[1])
         print('result:', res[0])
-    #
-    # def def_language(self, file_name):
-    #     with open("./file_name", "w") as w:
-    #         with open("./file_name", "r") as r:
-    #             for i in r:
-    #                 line = r.readline().split(" ")
-    #                 for g in line:
-    #                     # Кириллица
-    #                     # latin
-    #                     if 97 <= ord(g[0].lower()) <= 122:
-    #                         new_line = r'<voice required="Language=409"><voice required="Name=VW Julie">' + g
-    #                         w.write(new_line)
-    #                     # другие надо как-то обозначить
-    #                     else: pass
 
+    def def_language(self, file_name):
+        with open(file_name + ".txt", "r", encoding="utf8") as r:
+            with open(file_name + "_done" + ".txt", "w",encoding="utf8") as w:
+                buf = None
+                for i in r:
+                    #i = i.
+                    line = i.strip().split(" ")
+                    #line = i.split(" ")
+                    #if line == None or len(line) < 2: break
+
+                    fin_str = ""
+                    for g in line:
+                        print(g)
+                        # Кириллица
+                        # # latin
+                        #print(ord(g[0]))
+                        # если это аски тогда это английский, исключаем цифры и прочие знаки
+
+                        if 64 < ord(g[0]) < 91 or 96 < ord(g[0]) < 123:
+                            if buf == 1:
+                                fin_str += g + " "
+
+                            else:
+                                new_line = r'<voice required="Language=409"><voice required="Name=VW Julie">' + g + " "
+                                fin_str += new_line
+                                buf = 1
+                        else:
+
+                            if buf == 0:
+                                fin_str += g + " "
+                            else:
+                                new_line = r'<voice required="Language=419"><voice required="Name=Alyona22k">' + g + " "
+                                fin_str += new_line
+                                buf = 0
+                    w.write(fin_str)
+                    w.write("\n")
+
+
+                        # if 97 <= ord(g[0].lower()) <= 122:
+                        #     new_line = r'<voice required="Language=409"><voice required="Name=VW Julie">' + g
+                        #     w.write(new_line)
+                        # # другие надо как-то обозначить
+                        # else: pass
+                        #
                         # elif 1040 <= ord(g[0])  <= 1103:
                         #     pass
-
+    def cut_on_q_a_parts(self):
+        pass
 
 
 # лучше вынесу все объеты в маин, чтобы логика не путалась, чтобы стал главной базой
@@ -261,9 +308,10 @@ def main():
             if excel_file[sheet].cell(row=1, column=1).value == "NO":
                 continue
             export_list.to_txt(excel_file[sheet], operations.value_excel_operations(excel_file[sheet]), excel, sheet)
-            export_list.to_base(excel_file[sheet], operations.value_excel_operations(excel_file[sheet]))
+            #export_list.to_base(excel_file[sheet], operations.value_excel_operations(excel_file[sheet]))
             print("done", k, 8)
             k += 1
-    #balabolka.export(config.TYPE_OF_SELECT)
+    balabolka.def_language(config.TYPE_OF_SELECT)
+    balabolka.export(config.TYPE_OF_SELECT)
 
 main()
